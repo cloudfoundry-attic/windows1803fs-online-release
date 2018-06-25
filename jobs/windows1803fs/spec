@@ -1,0 +1,9 @@
+---
+name: windows1803fs
+
+templates: {}
+
+packages:
+  - windows1803fs
+
+properties: {}

@@ -1,0 +1,13 @@
+$ErrorActionPreference = "Stop";
+trap { $host.SetShouldExit(1) }
+
+$BOSH_INSTALL_TARGET = Resolve-Path "${env:BOSH_INSTALL_TARGET}"
+
+$image_tag=(cat code.cloudfoundry.org/windows2016fs/1803/IMAGE_TAG)
+$image_name="cloudfoundry/windows2016fs"
+
+c:\var\vcap\packages\hydrate\hydrate.exe -image $image_name -tag $image_tag -noTarball -outputDir "$BOSH_INSTALL_TARGET"
+if ($LastExitCode -ne 0) {
+  Exit $LastExitCode
+}
+

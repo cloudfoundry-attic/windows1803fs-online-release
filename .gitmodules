@@ -1,0 +1,6 @@
+[submodule "src/code.cloudfoundry.org/windows2016fs"]
+	path = src/code.cloudfoundry.org/windows2016fs
+	url = https://github.com/cloudfoundry-incubator/windows2016fs
+[submodule "src/code.cloudfoundry.org/hydrator"]
+	path = src/code.cloudfoundry.org/hydrator
+	url = https://github.com/cloudfoundry/hydrator
