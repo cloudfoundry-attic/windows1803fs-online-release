@@ -1,6 +1,8 @@
 builds:
   92f9bbd8-7418-49ad-4530-053af83807b9:
     version: 1.0.0
+  c74ce6e0-11db-4934-4e30-8e0b126e7d2c:
+    version: 1.2.0
   fed9c200-7522-4e3e-4762-18bb21b7bd15:
     version: 1.1.0
 format-version: "2"
