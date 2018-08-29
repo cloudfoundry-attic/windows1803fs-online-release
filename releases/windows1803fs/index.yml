@@ -3,6 +3,8 @@ builds:
     version: 1.0.0
   c74ce6e0-11db-4934-4e30-8e0b126e7d2c:
     version: 1.2.0
+  c7cc8a3c-415b-4fb7-7644-e7344ae8b747:
+    version: 1.3.0
   fed9c200-7522-4e3e-4762-18bb21b7bd15:
     version: 1.1.0
 format-version: "2"
