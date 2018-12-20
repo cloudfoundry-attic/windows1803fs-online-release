@@ -1,9 +1,28 @@
 ---
 name: windows1803fs
 
-templates: {}
+templates:
+  pre-start.ps1.erb: bin/pre-start.ps1
 
 packages:
   - windows1803fs
+  - hydrate
 
-properties: {}
+properties:
+  windows-rootfs.trusted_certs:
+    description: "Concatenation of PEM-encoded CA certficates to add to the rootfs trust store."
+    example: |
+      -----BEGIN CERTIFICATE-----
+      (contents of certificate #1)
+      -----END CERTIFICATE-----
+      -----BEGIN CERTIFICATE-----
+      (contents of certificate #2)
+      -----END CERTIFICATE-----
+
+  groot.cached_image_uris:
+    description: "An array of Windows container image URIs to cache at deployment time."
+    default: []
+
+  groot.driver_store:
+    description: "The directory in which groot will store read-only layers and read/write volumes."
+    default: "/var/lib/groot"
