@@ -1,0 +1,8 @@
+---
+name: certificate-injector
+
+dependencies:
+  - golang-windows
+
+files:
+  - certificate-injector/**/*

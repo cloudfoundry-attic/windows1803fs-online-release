@@ -7,6 +7,7 @@ templates:
 packages:
   - windows1803fs
   - hydrate
+  - certificate-injector
 
 properties:
   windows-rootfs.trusted_certs:
@@ -18,6 +19,7 @@ properties:
       -----BEGIN CERTIFICATE-----
       (contents of certificate #2)
       -----END CERTIFICATE-----
+    default: ""
 
   groot.cached_image_uris:
     description: "An array of Windows container image URIs to cache at deployment time."
