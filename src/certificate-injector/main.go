@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	/*"bytes"
 	  "code.cloudfoundry.org/filelock"
 	  "encoding/base64"
 	  "encoding/json"
-	  "io/ioutil"
 	  "os/exec"
 	  "path/filepath"
 	  "strings"
@@ -31,37 +31,41 @@ type cmd interface {
 }
 
 func Run(args []string, util util, cmd cmd) error {
-	if len(args) < 3 {
-		return fmt.Errorf("usage: %s <driver_store> <image_uri>...\n", args[0])
+	if len(args) < 4 {
+		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
+	}
+
+	// inject some certificates
+	certFile := args[2]
+	certData, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return fmt.Errorf("Failed to read cert_file: %s", err)
+	}
+
+	if len(certData) == 0 {
+		return nil
 	}
 
 	// TODO: for each image_uri, check if it contains an annotation, remove that layer
-	ociImage := args[2]
-	if util.ContainsHydratorAnnotation(ociImage) {
-		err := cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImage)
+	// TODO: parse the arg image_uri for the oci image path
+	ociImageUri := args[3]
+	if util.ContainsHydratorAnnotation(ociImageUri) {
+		err := cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImageUri)
 		if err != nil {
 			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
 		}
 	}
+
 	/*grootDriverStore := args[1]
 	grootImageUris := args[2:]
 
+	// TODO: the hydrator that is altering the rootfs is not looking at this lock file anyway, so we are punting right now
 	lock, err := filelock.NewLocker(filepath.Join(os.TempDir(), LockFileName)).Open()
 	if err != nil {
 		return fmt.Errorf("open lock: %s\n", err)
 	}
 	defer lock.Close()
 
-	// inject some certificates
-	certData, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		return fmt.Errorf("%s\n", "Cannot read certificates")
-	}
-
-
-	if len(certData) == 0 {
-		return nil
-	}
 
 	// creating an "add certificate" script that will be run inside a container
 	encodedCertData := base64.StdEncoding.EncodeToString(certData)

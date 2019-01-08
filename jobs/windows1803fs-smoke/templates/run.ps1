@@ -3,10 +3,12 @@ trap { $host.SetShouldExit(1) }
 Write-Host "Starting windows1803fs pre-start"
 
 $certData = "<%= p("windows-rootfs.trusted_certs") %>"
+$certFile=[System.IO.Path]::GetTempFileName()
+$certData | Out-File $certFile
 $grootDriverStore = "<%= p("groot.driver_store") %>"
 $grootImageUris = <% p("groot.cached_image_uris").join(" ") %>
 $certInjectorBin = "c:\var\vcap\packages\certificate-injector\certificate-injector.exe"
-$certData | $certInjectorBin $grootDriverStore $grootImageUris
+$certInjectorBin $grootDriverStore $certFile $grootImageUris
 
 # Happy path test!
 
@@ -34,15 +36,13 @@ Write-Host "winc run"
 & $wincBin run -b $bundleDir $containerId
 $stdOut = (& $wincBin exec "powershell ls Cert:\\LocalMachine\Root")
 
-$certFile=[System.IO.Path]::GetTempFileName()
-$certData | Out-File $certFile
-
-Remove-Item $certFile
-
 $certificateObject = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 $certificateObject.Import($CertificatePath, $sSecStrPassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
 $expectedThumbprint = $certificateObject.Thumbprint
 $testSuccess = $stdOut.Contains($expectedThumbprint)
+
+Remove-Item $certFile
+
 if ($testSuccess) {
   echo "Test succeeded"
   exit 0

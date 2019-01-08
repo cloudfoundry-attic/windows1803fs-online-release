@@ -3,7 +3,9 @@ trap { $host.SetShouldExit(1) }
 Write-Host "Starting windows1803fs pre-start"
 
 $certData = "<%= p("windows-rootfs.trusted_certs") %>"
+$certFile=[System.IO.Path]::GetTempFileName()
+$certData | Out-File $certFile
 $grootDriverStore = "<%= p("groot.driver_store") %>"
 $grootImageUris = <% p("groot.cached_image_uris").join(" ") %>
 $certInjectorBin = "c:\var\vcap\packages\certificate-injector\certificate-injector.exe"
-$certData | & $certInjectorBin $grootDriverStore $grootImageUris
+$certInjectorBin $grootDriverStore $certFile $grootImageUris
