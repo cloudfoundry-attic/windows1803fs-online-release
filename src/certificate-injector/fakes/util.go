@@ -1,16 +1,20 @@
 package fakes
 
-import "fmt"
-
 type Util struct {
-	containsHydratorAnnotation bool
-}
-
-func (u *Util) ContainsHydratorAnnotationReturns(annotations bool) {
-	u.containsHydratorAnnotation = annotations
+	ContainsHydratorAnnotationCall struct {
+		CallCount int
+		Receives  struct {
+			OCIImagePath string
+		}
+		Returns struct {
+			Contains bool
+		}
+	}
 }
 
 func (u *Util) ContainsHydratorAnnotation(ociImagePath string) bool {
-	fmt.Printf("SSUP\n")
-	return u.containsHydratorAnnotation
+	u.ContainsHydratorAnnotationCall.CallCount++
+	u.ContainsHydratorAnnotationCall.Receives.OCIImagePath = ociImagePath
+
+	return u.ContainsHydratorAnnotationCall.Returns.Contains
 }

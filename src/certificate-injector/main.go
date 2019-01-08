@@ -22,15 +22,27 @@ const (
 	hydrateBin      = "c:\\var\\vcap\\packages\\hydrate\\hydrate.exe"
 )
 
-type UtilInterface interface {
+type util interface {
 	ContainsHydratorAnnotation(ociImagePath string) bool
 }
 
-func Run(args []string, util UtilInterface) error {
+type cmd interface {
+	Run(executable string, args ...string) error
+}
+
+func Run(args []string, util util, cmd cmd) error {
 	if len(args) < 3 {
 		return fmt.Errorf("usage: %s <driver_store> <image_uri>...\n", args[0])
 	}
-	util.ContainsHydratorAnnotation(args[2])
+
+	// TODO: for each image_uri, check if it contains an annotation, remove that layer
+	ociImage := args[2]
+	if util.ContainsHydratorAnnotation(ociImage) {
+		err := cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImage)
+		if err != nil {
+			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
+		}
+	}
 	/*grootDriverStore := args[1]
 	grootImageUris := args[2:]
 
@@ -167,8 +179,9 @@ func Run(args []string, util UtilInterface) error {
 
 func main() {
 	logger := log.New(os.Stderr, "", 0)
-	util := &Util{}
-	if err := Run(os.Args, util); err != nil {
+	util := NewUtil()
+	cmd := NewCmd()
+	if err := Run(os.Args, util, cmd); err != nil {
 		logger.Print(err)
 		os.Exit(1)
 	}
