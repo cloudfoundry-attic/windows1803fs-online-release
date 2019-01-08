@@ -1,18 +1,12 @@
 package main
 
 import (
+	"certificate-injector/config"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	/*"bytes"
-	  "code.cloudfoundry.org/filelock"
-	  "encoding/base64"
-	  "encoding/json"
-	  "os/exec"
-	  "path/filepath"
-	  "strings"
-	  "time"*/)
+)
 
 const (
 	LockFileName    = "GrootRootfsMutex"
@@ -30,7 +24,11 @@ type cmd interface {
 	Run(executable string, args ...string) error
 }
 
-func Run(args []string, util util, cmd cmd) error {
+type configInterface interface {
+	Write() error
+}
+
+func Run(args []string, util util, cmd cmd, config configInterface) error {
 	if len(args) < 4 {
 		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
 	}
@@ -56,6 +54,11 @@ func Run(args []string, util util, cmd cmd) error {
 		}
 	}
 
+	err = config.Write()
+	if err != nil {
+		panic(err)
+	}
+
 	/*grootDriverStore := args[1]
 	grootImageUris := args[2:]
 
@@ -67,18 +70,6 @@ func Run(args []string, util util, cmd cmd) error {
 	defer lock.Close()
 
 
-	// creating an "add certificate" script that will be run inside a container
-	encodedCertData := base64.StdEncoding.EncodeToString(certData)
-	addCertScript := fmt.Sprintf(`
-	$ErrorActionPreference = "Stop";
-	trap { $host.SetShouldExit(1) }
-	$certFile=[System.IO.Path]::GetTempFileName()
-	$decodedCertData = [Convert]::FromBase64String("%s")
-	[IO.File]::WriteAllBytes($certFile, $decodedCertData)
-	Import-Certificate -CertStoreLocation Cert:\\LocalMachine\Root -FilePath $certFile
-	Remove-Item $certFile
-	`, encodedCertData)
-	addCertScript = base64.StdEncoding.EncodeToString([]byte(addCertScript))
 
 	// workaround for https://github.com/Microsoft/hcsshim/issues/155
 	fmt.Printf("%s\n", "Deleting existing containers")
@@ -99,6 +90,8 @@ func Run(args []string, util util, cmd cmd) error {
 		}
 	}
 
+
+
 	fmt.Printf("%s\n", "Begin exporting layer")
 	for _, uri := range grootImageUris {
 		containerId := fmt.Sprintf("layer%d", int32(time.Now().Unix()))
@@ -117,10 +110,6 @@ func Run(args []string, util util, cmd cmd) error {
 			return fmt.Errorf("failed to parse process spec\n")
 		}
 
-		thing := make(map[string]interface{})
-		thing["args"] = []string{"powershell.exe", "-EncodedCommand", "$encodedScript"}
-		thing["cwd"] = "C:\\"
-		config["process"] = thing
 
 		fmt.Printf("Writing config.json")
 		bundleDir := filepath.Join(os.TempDir(), containerId)
@@ -185,7 +174,8 @@ func main() {
 	logger := log.New(os.Stderr, "", 0)
 	util := NewUtil()
 	cmd := NewCmd()
-	if err := Run(os.Args, util, cmd); err != nil {
+	conf := config.NewConfig()
+	if err := Run(os.Args, util, cmd, conf); err != nil {
 		logger.Print(err)
 		os.Exit(1)
 	}
