@@ -24,16 +24,15 @@ type cmd interface {
 	Run(executable string, args ...string) error
 }
 
-type configInterface interface {
+type conf interface {
 	Write() error
 }
 
-func Run(args []string, util util, cmd cmd, config configInterface) error {
+func Run(args []string, util util, cmd cmd, conf conf) error {
 	if len(args) < 4 {
 		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
 	}
 
-	// inject some certificates
 	certFile := args[2]
 	certData, err := ioutil.ReadFile(certFile)
 	if err != nil {
@@ -54,9 +53,9 @@ func Run(args []string, util util, cmd cmd, config configInterface) error {
 		}
 	}
 
-	err = config.Write()
+	err = conf.Write()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("Write config failed: %s", err)
 	}
 
 	/*grootDriverStore := args[1]

@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"certificate-injector/config"
+	"encoding/json"
 	"io/ioutil"
 
 	. "github.com/onsi/ginkgo"
@@ -20,6 +21,10 @@ var _ = Describe("Config", func() {
 
 		data, err := ioutil.ReadFile("config.json")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(string(data)).To(ContainSubstring(`{"process":{"args":["powershell.exe","-EncodedCommand",""],"cwd":"C:\\"}}`))
+
+		jsonConfig := config.ConfigJson{}
+		json.Unmarshal(data, &jsonConfig)
+		Expect(jsonConfig.Process.Cwd).To(Equal("C:\\"))
+		Expect(jsonConfig.Process.Args[2]).To(Equal(""))
 	})
 })

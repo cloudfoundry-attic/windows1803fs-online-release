@@ -87,11 +87,24 @@ var _ = Describe("certificate-injector", func() {
 		})
 	})
 
-	It("creates a config for the container", func() {
-		err := Run(args, fakeUtil, fakeCmd, fakeConfig)
-		Expect(err).NotTo(HaveOccurred())
+	Describe("config.json", func() {
+		It("creates a config for the container", func() {
+			err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+			Expect(err).NotTo(HaveOccurred())
 
-		Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
+			Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
+		})
+
+		Context("when it fails to create a config", func() {
+			BeforeEach(func() {
+				fakeConfig.WriteCall.Returns.Error = errors.New("banana")
+			})
+
+			It("returns a helpful error message", func() {
+				err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+				Expect(err).To(MatchError("Write config failed: banana"))
+			})
+		})
 	})
 
 	Context("when called with incorrect arguments", func() {
