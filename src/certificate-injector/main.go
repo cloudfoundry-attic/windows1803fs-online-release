@@ -20,7 +20,7 @@ const (
 )
 
 type image interface {
-	ContainsHydratorAnnotation(ociImagePath string) bool
+	ContainsHydratorAnnotation(ociImagePath string) (bool, error)
 }
 
 type cmd interface {
@@ -49,7 +49,11 @@ func Run(args []string, image image, cmd cmd, conf conf) error {
 	// TODO: for each image_uri, check if it contains an annotation, remove that layer
 	// TODO: parse the arg image_uri for the oci image path
 	ociImageUri := args[3]
-	if image.ContainsHydratorAnnotation(ociImageUri) {
+	annotated, err := image.ContainsHydratorAnnotation(ociImageUri)
+	if err != nil {
+		panic(err)
+	}
+	if annotated {
 		err := cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImageUri)
 		if err != nil {
 			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)

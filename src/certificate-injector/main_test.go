@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("certificate-injector", func() {
 	var (
-		fakeUtil   *fakes.Util
+		fakeImage  *fakes.Image
 		fakeCmd    *fakes.Cmd
 		fakeConfig *fakes.Config
 
@@ -20,7 +20,7 @@ var _ = Describe("certificate-injector", func() {
 	)
 
 	BeforeEach(func() {
-		fakeUtil = &fakes.Util{}
+		fakeImage = &fakes.Image{}
 		fakeCmd = &fakes.Cmd{}
 		fakeConfig = &fakes.Config{}
 
@@ -29,11 +29,11 @@ var _ = Describe("certificate-injector", func() {
 
 	Context("when the layer has the layerAdded annotation", func() {
 		BeforeEach(func() {
-			fakeUtil.ContainsHydratorAnnotationCall.Returns.Contains = true
+			fakeImage.ContainsHydratorAnnotationCall.Returns.Contains = true
 		})
 
 		It("calls hydrator to remove the custom layer", func() {
-			err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+			err := Run(args, fakeImage, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeCmd.RunCall.CallCount).To(Equal(1))
 			Expect(fakeCmd.RunCall.Receives.Executable).To(ContainSubstring("hydrate.exe"))
@@ -46,7 +46,7 @@ var _ = Describe("certificate-injector", func() {
 			})
 
 			It("should return a helpful error", func() {
-				err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+				err := Run(args, fakeImage, fakeCmd, fakeConfig)
 				Expect(err).To(MatchError("hydrate.exe remove-layer failed: hydrator is unhappy\n"))
 			})
 		})
@@ -54,10 +54,10 @@ var _ = Describe("certificate-injector", func() {
 
 	Context("when the layer does not have the layerAdded annotation", func() {
 		It("does not call hydrator to remove the custom layer", func() {
-			err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+			err := Run(args, fakeImage, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeUtil.ContainsHydratorAnnotationCall.CallCount).To(Equal(1))
-			Expect(fakeUtil.ContainsHydratorAnnotationCall.Receives.OCIImagePath).To(Equal("first-image-uri"))
+			Expect(fakeImage.ContainsHydratorAnnotationCall.CallCount).To(Equal(1))
+			Expect(fakeImage.ContainsHydratorAnnotationCall.Receives.OCIImagePath).To(Equal("first-image-uri"))
 			Expect(fakeCmd.RunCall.CallCount).To(Equal(0))
 		})
 	})
@@ -69,7 +69,7 @@ var _ = Describe("certificate-injector", func() {
 			})
 
 			It("returns a helpful error", func() {
-				err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+				err := Run(args, fakeImage, fakeCmd, fakeConfig)
 				Expect(err).To(MatchError("Failed to read cert_file: open not-a-real-file.crt: no such file or directory"))
 			})
 		})
@@ -80,16 +80,16 @@ var _ = Describe("certificate-injector", func() {
 			})
 
 			It("does not check other arguments and exits successfully", func() {
-				err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+				err := Run(args, fakeImage, fakeCmd, fakeConfig)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeUtil.ContainsHydratorAnnotationCall.CallCount).To(Equal(0))
+				Expect(fakeImage.ContainsHydratorAnnotationCall.CallCount).To(Equal(0))
 			})
 		})
 	})
 
 	Describe("config.json", func() {
 		It("creates a config for the container", func() {
-			err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+			err := Run(args, fakeImage, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
@@ -102,7 +102,7 @@ var _ = Describe("certificate-injector", func() {
 			})
 
 			It("returns a helpful error message", func() {
-				err := Run(args, fakeUtil, fakeCmd, fakeConfig)
+				err := Run(args, fakeImage, fakeCmd, fakeConfig)
 				Expect(err).To(MatchError("Write container config failed: banana"))
 			})
 		})
@@ -110,7 +110,7 @@ var _ = Describe("certificate-injector", func() {
 
 	Context("when called with incorrect arguments", func() {
 		It("returns a helpful error message with usage", func() {
-			err := Run([]string{"certificate-injector.exe"}, fakeUtil, fakeCmd, fakeConfig)
+			err := Run([]string{"certificate-injector.exe"}, fakeImage, fakeCmd, fakeConfig)
 			Expect(err).To(MatchError(fmt.Sprintf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])))
 		})
 	})

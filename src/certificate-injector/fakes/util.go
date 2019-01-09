@@ -1,6 +1,6 @@
 package fakes
 
-type Util struct {
+type Image struct {
 	ContainsHydratorAnnotationCall struct {
 		CallCount int
 		Receives  struct {
@@ -8,13 +8,14 @@ type Util struct {
 		}
 		Returns struct {
 			Contains bool
+			Error    error
 		}
 	}
 }
 
-func (u *Util) ContainsHydratorAnnotation(ociImagePath string) bool {
+func (u *Image) ContainsHydratorAnnotation(ociImagePath string) (bool, error) {
 	u.ContainsHydratorAnnotationCall.CallCount++
 	u.ContainsHydratorAnnotationCall.Receives.OCIImagePath = ociImagePath
 
-	return u.ContainsHydratorAnnotationCall.Returns.Contains
+	return u.ContainsHydratorAnnotationCall.Returns.Contains, u.ContainsHydratorAnnotationCall.Returns.Error
 }
