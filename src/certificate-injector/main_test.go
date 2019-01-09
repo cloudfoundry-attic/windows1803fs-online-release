@@ -103,7 +103,7 @@ var _ = Describe("certificate-injector", func() {
 
 			It("returns a helpful error message", func() {
 				err := Run(args, fakeUtil, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError("Write config failed: banana"))
+				Expect(err).To(MatchError("Write container config failed: banana"))
 			})
 		})
 	})

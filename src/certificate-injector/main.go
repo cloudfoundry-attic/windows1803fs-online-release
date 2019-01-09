@@ -1,11 +1,14 @@
 package main
 
 import (
-	"certificate-injector/config"
+	"certificate-injector/command"
+	"certificate-injector/container"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"code.cloudfoundry.org/hydrator/oci-directory"
 )
 
 const (
@@ -16,7 +19,7 @@ const (
 	hydrateBin      = "c:\\var\\vcap\\packages\\hydrate\\hydrate.exe"
 )
 
-type util interface {
+type image interface {
 	ContainsHydratorAnnotation(ociImagePath string) bool
 }
 
@@ -28,7 +31,7 @@ type conf interface {
 	Write(certData []byte) error
 }
 
-func Run(args []string, util util, cmd cmd, conf conf) error {
+func Run(args []string, image image, cmd cmd, conf conf) error {
 	if len(args) < 4 {
 		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
 	}
@@ -46,7 +49,7 @@ func Run(args []string, util util, cmd cmd, conf conf) error {
 	// TODO: for each image_uri, check if it contains an annotation, remove that layer
 	// TODO: parse the arg image_uri for the oci image path
 	ociImageUri := args[3]
-	if util.ContainsHydratorAnnotation(ociImageUri) {
+	if image.ContainsHydratorAnnotation(ociImageUri) {
 		err := cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImageUri)
 		if err != nil {
 			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
@@ -55,7 +58,7 @@ func Run(args []string, util util, cmd cmd, conf conf) error {
 
 	err = conf.Write(certData)
 	if err != nil {
-		return fmt.Errorf("Write config failed: %s", err)
+		return fmt.Errorf("Write container config failed: %s", err)
 	}
 
 	/*grootDriverStore := args[1]
@@ -170,11 +173,13 @@ func Run(args []string, util util, cmd cmd, conf conf) error {
 }
 
 func main() {
+
 	logger := log.New(os.Stderr, "", 0)
-	util := NewUtil()
-	cmd := NewCmd()
-	conf := config.NewContainer()
-	if err := Run(os.Args, util, cmd, conf); err != nil {
+	handler := directory.NewHandler("ociImageDir")
+	image := container.NewImage(handler)
+	cmd := command.NewCmd()
+	conf := container.NewConfig()
+	if err := Run(os.Args, image, cmd, conf); err != nil {
 		logger.Print(err)
 		os.Exit(1)
 	}

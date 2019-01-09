@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:21142b5c90ed5f204231a5518364039bbb33f94352789f40ee3571401fe75c9c"
-  name = "code.cloudfoundry.org/filelock"
-  packages = ["."]
+  digest = "1:fab98806282b5b081ad181a27810ead0df6e40b5eb37bbc451f981e141508909"
+  name = "code.cloudfoundry.org/hydrator"
+  packages = ["oci-directory"]
   pruneopts = "NUT"
-  revision = "13cd4136463908a96faf1876aa0d9ada358f0b41"
+  revision = "128bdd1c18c7a7bb5e563b75d669dc095c67d371"
 
 [[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
@@ -79,6 +79,25 @@
   version = "v1.4.3"
 
 [[projects]]
+  digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
+  name = "github.com/opencontainers/go-digest"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
+  version = "v1.0.0-rc1"
+
+[[projects]]
+  digest = "1:11db38d694c130c800d0aefb502fb02519e514dc53d9804ce51d1ad25ec27db6"
+  name = "github.com/opencontainers/image-spec"
+  packages = [
+    "specs-go",
+    "specs-go/v1",
+  ]
+  pruneopts = "NUT"
+  revision = "d60099175f88c47cd379c4738d158884749ed235"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   digest = "1:5193d913046443e59093d66a97a40c51f4a5ea4ceba60f3b3ecf89694de5d16f"
   name = "golang.org/x/net"
@@ -92,12 +111,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:07aaaa686ca4f19afc6a85c83991253218d1582fb536078ae2fcde1df0d0ec91"
+  digest = "1:ca6c6c91837d9d0349d94e79e801c7db3462ba82acecbe5457cbbeca56d8b197"
   name = "golang.org/x/sys"
-  packages = [
-    "unix",
-    "windows",
-  ]
+  packages = ["unix"]
   pruneopts = "NUT"
   revision = "82a175fd1598e8a172e58ebdf5ed262bb29129e5"
 
@@ -156,10 +172,11 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "code.cloudfoundry.org/filelock",
+    "code.cloudfoundry.org/hydrator/oci-directory",
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/ginkgo",
     "github.com/onsi/gomega",
+    "github.com/opencontainers/image-spec/specs-go/v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
