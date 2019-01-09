@@ -27,38 +27,22 @@ var _ = Describe("certificate-injector", func() {
 		args = []string{"certificate-injector.exe", "", "fakes/really-has-certs.crt", "first-image-uri"}
 	})
 
-	Context("when the layer has the layerAdded annotation", func() {
-		BeforeEach(func() {
-			fakeImage.ContainsHydratorAnnotationCall.Returns.Contains = true
-		})
-
-		It("calls hydrator to remove the custom layer", func() {
-			err := Run(args, fakeImage, fakeCmd, fakeConfig)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeCmd.RunCall.CallCount).To(Equal(1))
-			Expect(fakeCmd.RunCall.Receives.Executable).To(ContainSubstring("hydrate.exe"))
-			Expect(fakeCmd.RunCall.Receives.Args).To(ContainElement("first-image-uri"))
-		})
-
-		Context("when hydrator fails to remove the custom layer", func() {
-			BeforeEach(func() {
-				fakeCmd.RunCall.Returns.Error = errors.New("hydrator is unhappy")
-			})
-
-			It("should return a helpful error", func() {
-				err := Run(args, fakeImage, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError("hydrate.exe remove-layer failed: hydrator is unhappy\n"))
-			})
-		})
+	It("calls hydrator to remove the custom layer", func() {
+		err := Run(args, fakeImage, fakeCmd, fakeConfig)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(fakeCmd.RunCall.CallCount).To(Equal(1))
+		Expect(fakeCmd.RunCall.Receives.Executable).To(ContainSubstring("hydrate.exe"))
+		Expect(fakeCmd.RunCall.Receives.Args).To(ContainElement("first-image-uri"))
 	})
 
-	Context("when the layer does not have the layerAdded annotation", func() {
-		It("does not call hydrator to remove the custom layer", func() {
+	Context("when hydrator fails to remove the custom layer", func() {
+		BeforeEach(func() {
+			fakeCmd.RunCall.Returns.Error = errors.New("hydrator is unhappy")
+		})
+
+		It("should return a helpful error", func() {
 			err := Run(args, fakeImage, fakeCmd, fakeConfig)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeImage.ContainsHydratorAnnotationCall.CallCount).To(Equal(1))
-			Expect(fakeImage.ContainsHydratorAnnotationCall.Receives.OCIImagePath).To(Equal("first-image-uri"))
-			Expect(fakeCmd.RunCall.CallCount).To(Equal(0))
+			Expect(err).To(MatchError("hydrate.exe remove-layer failed: hydrator is unhappy\n"))
 		})
 	})
 
