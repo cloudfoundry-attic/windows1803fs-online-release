@@ -25,7 +25,7 @@ type cmd interface {
 }
 
 type conf interface {
-	Write() error
+	Write(certData []byte) error
 }
 
 func Run(args []string, util util, cmd cmd, conf conf) error {
@@ -53,7 +53,7 @@ func Run(args []string, util util, cmd cmd, conf conf) error {
 		}
 	}
 
-	err = conf.Write()
+	err = conf.Write(certData)
 	if err != nil {
 		return fmt.Errorf("Write config failed: %s", err)
 	}
@@ -173,7 +173,7 @@ func main() {
 	logger := log.New(os.Stderr, "", 0)
 	util := NewUtil()
 	cmd := NewCmd()
-	conf := config.NewConfig()
+	conf := config.NewContainer()
 	if err := Run(os.Args, util, cmd, conf); err != nil {
 		logger.Print(err)
 		os.Exit(1)

@@ -1,12 +1,13 @@
 package config
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 )
 
-const powershell = `
+const ImportCertificatePs = `
 $ErrorActionPreference = "Stop";
 trap { $host.SetShouldExit(1) }
 $certFile=[System.IO.Path]::GetTempFileName()
@@ -16,10 +17,9 @@ Import-Certificate -CertStoreLocation Cert:\\LocalMachine\Root -FilePath $certFi
 Remove-Item $certFile
 `
 
-type Config struct {
-}
+type Container struct{}
 
-type ConfigJson struct {
+type ContainerJSON struct {
 	Process process `json:"process"`
 }
 
@@ -28,26 +28,32 @@ type process struct {
 	Cwd  string   `json:"cwd"`
 }
 
-func NewConfig() Config {
-	return Config{}
+func NewContainer() Container {
+	return Container{}
 }
 
 // Creates a powershell script to write the certs
 // to a file and import the certificate. It appends
 // this script as a process to a config.json that will
 // be run on the container.
-func (c Config) Write() error {
-	// unencoded := fmt.Sprintf(powershell, "")
-	// encoded := base64.StdEncoding.EncodeToString(unencoded)
-	conf := ConfigJson{
+func (c Container) Write(certData []byte) error {
+	command := fmt.Sprintf(ImportCertificatePs, string(certData))
+
+	encodedCommand := base64.StdEncoding.EncodeToString([]byte(command))
+
+	containerJSON := ContainerJSON{
 		Process: process{
-			Args: []string{"powershell.exe", "-EncodedCommand", ""},
+			Args: []string{"powershell.exe", "-EncodedCommand", encodedCommand},
 			Cwd:  `C:\`,
 		},
 	}
-	configJson, _ := json.Marshal(conf)
 
-	err := ioutil.WriteFile("config.json", configJson, 0644)
+	marshalledContainerJSON, err := json.Marshal(containerJSON)
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile("config.json", marshalledContainerJSON, 0644)
 	if err != nil {
 		return fmt.Errorf("Write config.json failed: %s", err)
 	}

@@ -93,6 +93,7 @@ var _ = Describe("certificate-injector", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
+			Expect(string(fakeConfig.WriteCall.Receives.CertData)).To(ContainSubstring("this-is-a-cert"))
 		})
 
 		Context("when it fails to create a config", func() {
