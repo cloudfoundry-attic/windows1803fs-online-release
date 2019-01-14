@@ -6,16 +6,19 @@ $certData = "<%= p("windows-rootfs.trusted_certs") %>"
 $certFile=[System.IO.Path]::GetTempFileName()
 $certData | Out-File $certFile
 $grootDriverStore = "<%= p("groot.driver_store") %>"
-$grootImageUris = <% p("groot.cached_image_uris").join(" ") %>
-$certInjectorBin = "c:\var\vcap\packages\certificate-injector\certificate-injector.exe"
-$certInjectorBin $grootDriverStore $certFile $grootImageUris
+$grootImageUris = "<%= p("groot.cached_image_uris").join(" ") %>"
+$certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
+& $certInjectorBin $grootDriverStore $certFile $grootImageUris.Split(" ")
+if ($LASTEXITCODE -ne 0) {
+  exit $LASTEXITCODE
+}
 
 # Happy path test!
 
 $grootBin = "c:\var\vcap\packages\groot\groot.exe"
 $wincBin = "c:\var\vcap\packages\winc\winc.exe"
-$containerId = "windows1803fs-smoke" + [System.Math]::Round((date -UFormat %s),0)
-$grootImageUri = <% p("groot.cached_image_uris")[0] %>
+$containerId = "windows1803fs-smoke-test" + [System.Math]::Round((date -UFormat %s),0)
+$grootImageUri = "<% p("groot.cached_image_uris")[0] %>"
 $stdOut = (& $grootBin --driver-store $grootDriverStore create $grootImageUri $containerId)
 $processSpec=@"
 {"args": ["powershell.exe", "-EncodedCommand", "$encodedScript"], "cwd": "C:\\" }
@@ -37,7 +40,7 @@ Write-Host "winc run"
 $stdOut = (& $wincBin exec "powershell ls Cert:\\LocalMachine\Root")
 
 $certificateObject = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$certificateObject.Import($CertificatePath, $sSecStrPassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+$certificateObject.Import($CertificatePath, "", [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
 $expectedThumbprint = $certificateObject.Thumbprint
 $testSuccess = $stdOut.Contains($expectedThumbprint)
 

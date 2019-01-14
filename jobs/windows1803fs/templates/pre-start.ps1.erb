@@ -1,23 +1,28 @@
-$ErrorActionPreference = "Stop";
-trap { $host.SetShouldExit(1) }
-Write-Host "Starting windows1803fs pre-start"
+<% if_p("windows-rootfs.trusted_certs") do |trusted_certs| %>
+  $ErrorActionPreference = "Stop";
+  trap { $host.SetShouldExit(1) }
+  Write-Host "Starting windows1803fs pre-start"
 
-# In practice, there should be a single image uri, however
-# if there's ever more than one, this will take much longer
-# and we should move mutext handling into the cert-injector
-# and create a mutex _per_ image uri.
-$mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
-$thirtyMinutes = 30 * 60 * 1000
-if (!$mtx.WaitOne(300000)) {
-  throw "Could not acquire RootfsMutex after 30 minutes"
-}
+  # In practice, there should be a single image uri, however
+  # if there's ever more than one, this will take much longer
+  # and we should move mutext handling into the cert-injector
+  # and create a mutex _per_ image uri.
+  $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
+  $thirtyMinutes = 30 * 60 * 1000
+  if (!$mtx.WaitOne($thirtyMinutes)) {
+    throw "Could not acquire RootfsMutex after 30 minutes"
+  }
 
-$certData = "<%= p("windows-rootfs.trusted_certs") %>"
-$certFile=[System.IO.Path]::GetTempFileName()
-$certData | Out-File $certFile
-$grootDriverStore = "<%= p("groot.driver_store") %>"
-$grootImageUris = <% p("groot.cached_image_uris").join(" ") %>
-$certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
-&$certInjectorBin $grootDriverStore $certFile $grootImageUris
+  $certData = "<%= trusted_certs %>"
+  $certFile=[System.IO.Path]::GetTempFileName()
+  $certData | Out-File $certFile
+  $grootDriverStore = "<%= p("groot.driver_store") %>"
+  $grootImageUris = "<%= p("groot.cached_image_uris").join(" ") %>"
+  $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
+  & $certInjectorBin $grootDriverStore $certFile $grootImageUris.Split(" ")
+  if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
 
-$mtx.ReleaseMutex()
+  $mtx.ReleaseMutex()
+<% end %>
