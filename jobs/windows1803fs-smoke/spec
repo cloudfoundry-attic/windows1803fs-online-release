@@ -7,7 +7,7 @@ templates:
 packages:
   - windows1803fs
   - hydrate
-  - certificate-injector
+  - cert-injector
 
 properties:
   windows-rootfs.trusted_certs:
