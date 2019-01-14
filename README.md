@@ -11,5 +11,6 @@ This release assumes your BOSH installation has internet access at deploy time.
 Ensure that `winc-release` and `windows1803fs-release` are uploaded to your BOSH director.
 
 ```
-bosh -d windows1803fs-smoke-test deploy manifests/smoke-test.yml
+bosh -d windows1803fs deploy manifests/smoke-test.yml
+bosh -d windows1803fs run-errand smoke-test
 ```

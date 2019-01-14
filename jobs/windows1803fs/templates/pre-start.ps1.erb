@@ -16,8 +16,8 @@
   $certData = "<%= trusted_certs %>"
   $certFile=[System.IO.Path]::GetTempFileName()
   $certData | Out-File $certFile
-  $grootDriverStore = "<%= p("groot.driver_store") %>"
-  $grootImageUris = "<%= p("groot.cached_image_uris").join(" ") %>"
+  $grootDriverStore = "<%= link('groot').p('groot.driver_store') %>"
+  $grootImageUris = "<%= link('groot').p('groot.cached_image_uris').join(" ") %>"
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
   & $certInjectorBin $grootDriverStore $certFile $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {

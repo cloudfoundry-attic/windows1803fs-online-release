@@ -1,12 +1,12 @@
 ---
-name: windows1803fs-smoke-test
+name: windows1803fs
 update:
   canaries: 1
   canary_watch_time: 5000-120000
   max_in_flight: 1
   update_watch_time: 5000-120000
 instance_groups:
-  - name: windows1803fs-smoke-test
+  - name: smoke-test
     lifecycle: errand
     azs: [z1]
     instances: 1
@@ -29,10 +29,6 @@ instance_groups:
     - name: windows1803fs-smoke-test
       release: windows1803fs
       properties:
-        groot:
-          cached_image_uris:
-          - oci:///C:/var/vcap/packages/windows1803fs
-          driver_store: /var/vcap/data/groot
         windows-rootfs:
           trusted_certs: |+
             -----BEGIN CERTIFICATE-----
@@ -67,10 +63,6 @@ instance_groups:
     - name: windows1803fs
       release: windows1803fs
       properties:
-        groot:
-          cached_image_uris:
-          - oci:///C:/var/vcap/packages/windows1803fs
-          driver_store: /var/vcap/data/groot
         windows-rootfs:
           trusted_certs: |+
             -----BEGIN CERTIFICATE-----
@@ -102,11 +94,21 @@ instance_groups:
             r5EejEQP82achV3em5+macfNfEIILruStanw9D+kR1GYlE07wMTTmkZ39x3HMicf
             r4ERoMvnaSaiGVHIiCi9ZsoNLlf6TBNNfaqpc8jDZa2/o/nM+Q==
             -----END CERTIFICATE-----
+    - name: enable_rdp
+      release: windows-utilities
+    - name: enable_ssh
+      release: windows-utilities
+
 releases:
 - name: windows1803fs
   version: latest
 - name: winc
   version: latest
+- name: windows-utilities
+  sha1: efc10ac0f4acae23637ce2c6f864d20df2e3a781
+  url: https://bosh.io/d/github.com/cloudfoundry-incubator/windows-utilities-release?v=0.11.0
+  version: 0.11.0
+
 stemcells:
 - alias: windows1803
   os: windows1803

@@ -1,8 +1,0 @@
----
-name: cert-injector
-
-dependencies:
-  - golang-windows
-
-files:
-  - code.cloudfoundry.org/cert-injector/**/*
