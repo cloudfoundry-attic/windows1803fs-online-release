@@ -14,7 +14,7 @@ $containerId = "windows1803fs-smoke-test" + [System.Math]::Round((date -UFormat 
 $grootImageUri = "<%= link('groot').p('groot.cached_image_uris')[0] %>"
 $stdOut = (& $grootBin --driver-store $grootDriverStore create $grootImageUri $containerId)
 $processSpec=@"
-{"args": ["powershell.exe", "-command", "ls Cert:\\LocalMachine\Root"], "cwd": "C:\\" }
+{"args": ["powershell.exe", "-command", "ls Cert:\\\\LocalMachine\\Root"], "cwd": "C:\\" }
 "@
 
 $pObj = $processSpec | convertfrom-json
