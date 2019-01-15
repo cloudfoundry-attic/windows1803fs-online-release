@@ -14,12 +14,12 @@
   }
 
   $certData = "<%= trusted_certs %>"
-  $certFile=[System.IO.Path]::GetTempFileName()
-  $certData | Out-File $certFile
+  $encodedCertData = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($certData))
+
   $grootDriverStore = "<%= link('groot').p('groot.driver_store') %>"
   $grootImageUris = "<%= link('groot').p('groot.cached_image_uris').join(" ") %>"
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
-  & $certInjectorBin $grootDriverStore $certFile $grootImageUris.Split(" ")
+  & $certInjectorBin $grootDriverStore $encodedCertData $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
   }
