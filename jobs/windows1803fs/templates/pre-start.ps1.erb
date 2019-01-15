@@ -14,7 +14,7 @@
   }
 
   $certData = "<%= trusted_certs %>"
-  $encodedCertData = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($certData))
+  $encodedCertData = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($certData))
 
   $grootDriverStore = "<%= link('groot').p('groot.driver_store') %>"
   $grootImageUris = "<%= link('groot').p('groot.cached_image_uris').join(" ") %>"
