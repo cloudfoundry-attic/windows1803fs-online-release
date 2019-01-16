@@ -46,6 +46,8 @@ if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
 
+rm -Recurse -Force -ErrorAction SilentlyContinue $bundleDir
+
 $certData = "<%= p("windows-rootfs.trusted_certs") %>"
 $certFile=[System.IO.Path]::GetTempFileName()
 $certData | Out-File $certFile
