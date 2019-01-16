@@ -2,10 +2,6 @@ $ErrorActionPreference = "Stop";
 trap { $host.SetShouldExit(1) }
 Write-Host "Starting windows1803fs pre-start"
 
-$certData = "<%= p("windows-rootfs.trusted_certs") %>"
-$certFile=[System.IO.Path]::GetTempFileName()
-$certData | Out-File $certFile
-
 # Happy path test!
 
 $grootBin = "c:\var\vcap\packages\groot\groot.exe"
@@ -21,6 +17,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 $config = $stdOut | ConvertFrom-Json
 
+# Write a config file to be executed on the container that will list the certificates in the store
 $processSpec=@"
 {"args": ["powershell.exe", "-command", "ls Cert:\\\\LocalMachine\\Root"], "cwd": "C:\\" }
 "@
@@ -35,6 +32,7 @@ mkdir $bundleDir | Out-Null
 $configJson = ($config | ConvertTo-Json)
 Set-Content -Path $configPath -Value $configJson
 
+# Create the container to test the expected certificates were injected
 Write-Host "winc run"
 $stdOut = (& $wincBin run -b $bundleDir $containerId)
 if ($LASTEXITCODE -ne 0) {
@@ -42,17 +40,24 @@ if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
 
+&$grootBin --driver-store $grootDriverStore delete $containerId
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "groot delete failed"
+  exit $LASTEXITCODE
+}
+
+$certData = "<%= p("windows-rootfs.trusted_certs") %>"
+$certFile=[System.IO.Path]::GetTempFileName()
+$certData | Out-File $certFile
+
 $certificateObject = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
 $certificateObject.Import($certFile, "", [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
 $expectedThumbprint = $certificateObject.Thumbprint
-# Verify that the container has the injected certificate in the system cert store
-Write-Host $expectedThumbprint
-Write-Host $stdOut
-$testSuccess = $stdOut.Contains($expectedThumbprint)
 
 Remove-Item $certFile
 
-if ($testSuccess) {
+# Verify that the container has the injected certificate in the system cert store
+if ($stdOut -match $expectedThumbprint) {
   echo "Test succeeded"
   exit 0
 }

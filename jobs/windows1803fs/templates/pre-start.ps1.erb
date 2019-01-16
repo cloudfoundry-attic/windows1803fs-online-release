@@ -21,6 +21,7 @@
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
   & $certInjectorBin $grootDriverStore $encodedCertData $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {
+    Write-Host "cert-injector failed injecting trusted certs"
     exit $LASTEXITCODE
   }
 
