@@ -48,20 +48,41 @@ if ($LASTEXITCODE -ne 0) {
 
 rm -Recurse -Force -ErrorAction SilentlyContinue $bundleDir
 
-$certData = "<%= p("windows-rootfs.trusted_certs") %>"
+# powershell can't handle multiple certs in one file, so we need to split them up
+$certData = "<%= p('windows-rootfs.trusted_certs') %>"
 $certFile=[System.IO.Path]::GetTempFileName()
-$certData | Out-File $certFile
+Set-Content -Value $certData -Path $certFile -Encoding Ascii
+$certDirectory = "c:\var\vcap\data\tmp\windows1803fs-trusted-certs"
+rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+mkdir $certDirectory | Out-Null
 
-$certificateObject = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$certificateObject.Import($certFile, "", [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-$expectedThumbprint = $certificateObject.Thumbprint
+$certSplitterBin = "c:\var\vcap\packages\certsplitter-fs\certsplitter.exe"
+& $certSplitterBin $certFile $certDirectory
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "certsplitter failed to split certs"
+  rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+  Remove-Item $certFile
+  exit $LASTEXITCODE
+}
 
+# Verify that the container has the injected certificates in the system cert store
+ls $certDirectory | foreach {
+  $file = $certDirectory  + "\" + $_.Name
+
+  $certificateObject = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+  $certificateObject.Import($file, "", [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+  $expectedThumbprint = $certificateObject.Thumbprint
+
+  if (-not ($stdOut -match $expectedThumbprint)) {
+    echo "Test failed, couldn't find $expectedThumbprint in the container"
+    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+    Remove-Item $certFile
+    exit 1
+  }
+}
+
+rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
 Remove-Item $certFile
 
-# Verify that the container has the injected certificate in the system cert store
-if ($stdOut -match $expectedThumbprint) {
-  echo "Test succeeded"
-  exit 0
-}
-echo "Test failed. Certificate does not exist in the container"
-exit 1
+echo "Test succeeded, all certificates found in the container"
+exit 0

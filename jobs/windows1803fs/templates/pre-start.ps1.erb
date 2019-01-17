@@ -3,6 +3,23 @@
   trap { $host.SetShouldExit(1) }
   Write-Host "Started windows1803fs pre-start"
 
+  # powershell can't handle multiple certs in one file, so we need to split them up
+  $certData = "<%= trusted_certs %>"
+  $certFile=[System.IO.Path]::GetTempFileName()
+  Set-Content -Value $certData -Path $certFile -Encoding Ascii
+  $certDirectory = "c:\var\vcap\data\tmp\windows1803fs-trusted-certs"
+  rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+  mkdir $certDirectory | Out-Null
+
+  $certSplitterBin = "c:\var\vcap\packages\certsplitter-fs\certsplitter.exe"
+  & $certSplitterBin $certFile $certDirectory
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "certsplitter failed to split certs"
+    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+    Remove-Item $certFile
+    exit $LASTEXITCODE
+  }
+
   # In practice, there should be a single image uri, however
   # if there's ever more than one, this will take much longer
   # and we should move mutex handling into the cert-injector
@@ -10,25 +27,28 @@
   $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
   $thirtyMinutes = 30 * 60 * 1000
   if (!$mtx.WaitOne($thirtyMinutes)) {
+    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+    Remove-Item $certFile
     throw "Could not acquire RootfsMutex after 30 minutes"
   }
-
-  $certData = "<%= trusted_certs %>"
-  $encodedCertData = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($certData))
 
   $grootDriverStore = "<%= link('groot').p('groot.driver_store') %>"
   $grootImageUris = "<%= link('groot').p('groot.cached_image_uris').join(" ") %>"
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
 
   Write-Host "Running cert-injector"
-  & $certInjectorBin $grootDriverStore $encodedCertData $grootImageUris.Split(" ")
+  & $certInjectorBin $grootDriverStore $certDirectory $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {
     Write-Host "cert-injector failed injecting trusted certs"
+    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+    Remove-Item $certFile
     $mtx.ReleaseMutex()
     exit $LASTEXITCODE
   }
   Write-Host "Finished running cert-injector"
 
+  rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+  Remove-Item $certFile
   $mtx.ReleaseMutex()
   Write-Host "Finished windows1803fs pre-start"
 <% end %>
