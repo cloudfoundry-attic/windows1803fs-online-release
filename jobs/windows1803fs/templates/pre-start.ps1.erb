@@ -32,8 +32,13 @@
     throw "Could not acquire RootfsMutex after 30 minutes"
   }
 
-  $grootDriverStore = "<%= if_link('groot').p('groot.driver_store') %>"
-  $grootImageUris = "<%= if_link('groot').p('groot.cached_image_uris').join(" ") %>"
+  $grootDriverStore = ""
+  $grootImageUris = ""
+  <%= if_link('groot') do |groot|
+    $grootDriverStore = groot.p('groot.driver_store')
+    $grootImageUris = groot.p('groot.cached_image_uris').join(" ")
+  %>
+
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
 
   Write-Host "Running cert-injector"
