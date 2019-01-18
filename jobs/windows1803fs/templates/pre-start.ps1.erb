@@ -34,10 +34,15 @@
 
   $grootDriverStore = ""
   $grootImageUris = ""
+
   <%= if_link('groot') do |groot|
-    $grootDriverStore = groot.p('groot.driver_store')
-    $grootImageUris = groot.p('groot.cached_image_uris').join(" ")
-  %>
+    groot.if_p('groot.driver_store') do |driverStore|
+      $grootDriverStore = driverStore
+    end
+    groot.if_p('groot.cached_image_uris') do |imageUris|
+      $grootImageUris = imageUris
+    end
+  end %>
 
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
 
