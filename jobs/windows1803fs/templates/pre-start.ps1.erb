@@ -11,7 +11,7 @@
   rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
   mkdir $certDirectory | Out-Null
 
-  $certSplitterBin = "c:\var\vcap\packages\certsplitter_windows\certsplitter.exe"
+  $certSplitterBin = "c:\var\vcap\packages\certsplitter-fs\certsplitter.exe"
   & $certSplitterBin $certFile $certDirectory
   if ($LASTEXITCODE -ne 0) {
     Write-Host "certsplitter failed to split certs"
