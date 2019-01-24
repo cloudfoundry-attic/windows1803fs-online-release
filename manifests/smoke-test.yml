@@ -1,5 +1,5 @@
 ---
-name: windows1803fs
+name: ((fs-version))
 update:
   canaries: 1
   canary_watch_time: 5000-120000
@@ -12,7 +12,7 @@ instance_groups:
   vm_type: minimal
   vm_extensions:
   - 50GB_ephemeral_disk
-  stemcell: windows1803
+  stemcell: ((stemcell-os))
   networks:
   - name: default
   jobs:
@@ -21,12 +21,11 @@ instance_groups:
   - name: groot
     properties:
      groot:
-       cached_image_uris:
-       - oci:///C:/var/vcap/packages/windows1803fs
+       cached_image_uris: ((cached-image-uris))
        driver_store: /var/vcap/data/groot
     release: winc
-  - name: windows1803fs
-    release: windows1803fs
+  - name: ((fs-version))
+    release: ((fs-version))
     properties:
       windows-rootfs:
         trusted_certs: |+
@@ -90,8 +89,8 @@ instance_groups:
           igLYC9/0PmINKcad9Gyh0i60i4fSCw2nkKR64Xw0vh2QpLSIwf1jWEwXZcQGmDL+
           wCjbUCZD9/7d+S0h
           -----END CERTIFICATE-----
-  - name: windows1803fs-smoke-test
-    release: windows1803fs
+  - name: ((smoke-test-name)) 
+    release: ((fs-version))
     properties:
       windows-rootfs:
         trusted_certs: |+
@@ -161,7 +160,7 @@ instance_groups:
     release: windows-utilities
 
 releases:
-- name: windows1803fs
+- name: ((fs-version))
   version: latest
 - name: winc
   version: latest
@@ -171,6 +170,6 @@ releases:
   version: 0.11.0
 
 stemcells:
-- alias: windows1803
-  os: windows1803
+- alias: ((stemcell-os))
+  os: ((stemcell-os))
   version: latest
