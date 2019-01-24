@@ -1,13 +1,23 @@
+Write-Host "Started windowsfs pre-start"
+
+function cleanupCerts([string]$certDirectory, [string]$certFile) {
+  rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
+  Remove-Item $certFile
+}
+
 <% if_p("windows-rootfs.trusted_certs") do |trusted_certs| %>
   $ErrorActionPreference = "Stop";
   trap { $host.SetShouldExit(1) }
-  Write-Host "Started windows1803fs pre-start"
+
+  Write-Host "Injecting trusted certs"
 
   # powershell can't handle multiple certs in one file, so we need to split them up
+  Write-Host "Splitting certs"
+
   $certData = "<%= trusted_certs %>"
   $certFile=[System.IO.Path]::GetTempFileName()
   Set-Content -Value $certData -Path $certFile -Encoding Ascii
-  $certDirectory = "c:\var\vcap\data\tmp\windows1803fs-trusted-certs"
+  $certDirectory = "c:\var\vcap\data\tmp\windowsfs-trusted-certs"
   rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
   mkdir $certDirectory | Out-Null
 
@@ -15,8 +25,7 @@
   & $certSplitterBin $certFile $certDirectory
   if ($LASTEXITCODE -ne 0) {
     Write-Host "certsplitter failed to split certs"
-    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
-    Remove-Item $certFile
+    cleanupCerts($certDirectory, $certFile)
     exit $LASTEXITCODE
   }
 
@@ -24,13 +33,15 @@
   # if there's ever more than one, this will take much longer
   # and we should move mutex handling into the cert-injector
   # and create a mutex _per_ image uri.
+  Write-Host "Acquiring RootfsMutex"
+
   $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
   $thirtyMinutes = 30 * 60 * 1000
   if (!$mtx.WaitOne($thirtyMinutes)) {
-    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
-    Remove-Item $certFile
+    cleanupCerts($certDirectory, $certFile)
     throw "Could not acquire RootfsMutex after 30 minutes"
   }
+  Write-Host "Acquired RootfsMutex"
 
   $grootDriverStore = ""
   $grootImageUris = ""
@@ -46,15 +57,21 @@
   & $certInjectorBin $grootDriverStore $certDirectory $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {
     Write-Host "cert-injector failed injecting trusted certs"
-    rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
-    Remove-Item $certFile
+    cleanupCerts($certDirectory, $certFile)
+
     $mtx.ReleaseMutex()
+    Write-Host "Released RootfsMutex"
+
     exit $LASTEXITCODE
   }
   Write-Host "Finished running cert-injector"
 
-  rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
-  Remove-Item $certFile
+  cleanupCerts($certDirectory, $certFile)
+
+  Write-Host "Finished injecting trusted certs"
+
   $mtx.ReleaseMutex()
-  Write-Host "Finished windows1803fs pre-start"
+  Write-Host "Released RootfsMutex"
 <% end %>
+
+Write-Host "Finished windowsfs pre-start"
