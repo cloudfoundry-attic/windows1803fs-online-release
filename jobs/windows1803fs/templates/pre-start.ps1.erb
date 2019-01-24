@@ -5,6 +5,12 @@ function cleanupCerts([string]$certDirectory, [string]$certFile) {
   Remove-Item $certFile
 }
 
+<% if p("windows-rootfs.trusted_certs") == "" %>
+  Write-Host "No certs provided"
+  Write-Host "Finished windowsfs pre-start"
+  exit 0
+<% end %>
+
 <% if_p("windows-rootfs.trusted_certs") do |trusted_certs| %>
   $ErrorActionPreference = "Stop";
   trap { $host.SetShouldExit(1) }
