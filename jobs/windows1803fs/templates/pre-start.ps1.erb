@@ -1,8 +1,19 @@
 Write-Host "Started windowsfs pre-start"
 
-function cleanupCerts([string]$certDirectory, [string]$certFile) {
+function cleanupCerts() {
+  Param(
+    [string]$certDirectory, [string]$certFile
+  )
   rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
   Remove-Item $certFile
+  if (Test-Path $certDirectory) {
+    Write-Host "Failed to remove cert directory: $certDirectory"
+    exit 1
+  }
+  if (Test-Path $certFile) {
+    Write-Host "Failed to remove cert directory: $certFile"
+    exit 1
+  }
 }
 
 <% if p("windows-rootfs.trusted_certs") == "" %>
@@ -31,7 +42,7 @@ function cleanupCerts([string]$certDirectory, [string]$certFile) {
   & $certSplitterBin $certFile $certDirectory
   if ($LASTEXITCODE -ne 0) {
     Write-Host "certsplitter failed to split certs"
-    cleanupCerts($certDirectory, $certFile)
+    cleanupCerts -certDirectory $certDirectory -certFile $certFile
     exit $LASTEXITCODE
   }
 
@@ -44,7 +55,7 @@ function cleanupCerts([string]$certDirectory, [string]$certFile) {
   $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
   $thirtyMinutes = 30 * 60 * 1000
   if (!$mtx.WaitOne($thirtyMinutes)) {
-    cleanupCerts($certDirectory, $certFile)
+    cleanupCerts -certDirectory $certDirectory -certFile $certFile
     throw "Could not acquire RootfsMutex after 30 minutes"
   }
   Write-Host "Acquired RootfsMutex"
@@ -63,7 +74,7 @@ function cleanupCerts([string]$certDirectory, [string]$certFile) {
   & $certInjectorBin $grootDriverStore $certDirectory $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {
     Write-Host "cert-injector failed injecting trusted certs"
-    cleanupCerts($certDirectory, $certFile)
+    cleanupCerts -certDirectory $certDirectory -certFile $certFile
 
     $mtx.ReleaseMutex()
     Write-Host "Released RootfsMutex"
@@ -72,7 +83,7 @@ function cleanupCerts([string]$certDirectory, [string]$certFile) {
   }
   Write-Host "Finished running cert-injector"
 
-  cleanupCerts($certDirectory, $certFile)
+  cleanupCerts -certDirectory $certDirectory -certFile $certFile
 
   Write-Host "Finished injecting trusted certs"
 
