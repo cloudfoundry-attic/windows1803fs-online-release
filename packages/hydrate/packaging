@@ -6,7 +6,7 @@ if ((Get-Item $BOSH_INSTALL_TARGET).LinkType -ne "") {
   $BOSH_INSTALL_TARGET = (Get-Item $BOSH_INSTALL_TARGET).Target
 }
 
-. C:\var\vcap\packages\golang-1.11-windows\bosh\compile.ps1
+. C:\var\vcap\packages\golang-1.12-windows\bosh\compile.ps1
 $env:GOPATH="${BOSH_INSTALL_TARGET}"
 $env:PATH="${env:GOROOT}\bin;${env:PATH}"
 $pkg_name="hydrate"
