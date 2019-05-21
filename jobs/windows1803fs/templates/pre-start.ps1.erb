@@ -1,4 +1,6 @@
-Write-Host "Started windowsfs pre-start"
+filter timestamp {"$(Get-Date -Format G): $_"}
+
+Write-Output "Started windowsfs pre-start" | timestamp
 
 function cleanupCerts() {
   Param(
@@ -7,11 +9,11 @@ function cleanupCerts() {
   rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
   Remove-Item $certFile
   if (Test-Path $certDirectory) {
-    Write-Host "Failed to remove cert directory: $certDirectory"
+    Write-Output "Failed to remove cert directory: $certDirectory" | timestamp
     exit 1
   }
   if (Test-Path $certFile) {
-    Write-Host "Failed to remove cert directory: $certFile"
+    Write-Output "Failed to remove cert directory: $certFile" | timestamp
     exit 1
   }
 }
@@ -20,7 +22,7 @@ function cleanupCerts() {
   $ErrorActionPreference = "Stop";
   trap { $host.SetShouldExit(1) }
 
-  Write-Host "No certs provided"
+  Write-Output "No certs provided" | timestamp
   # Even though there are no certs in the manifest, we have to clean up any existing
   # certs that may have been placed in the image due to an earlier deploy.
   #
@@ -31,8 +33,8 @@ function cleanupCerts() {
   <% if_link('groot') do |groot| %>
     <% groot.p('groot.cached_image_uris').each do |uri| %>
       $uri = "<%= uri %>"
-      Write-Host "Cleaning any pre-existing certs from the top layer of $uri"
-      Write-Host "Acquiring RootfsMutex"
+      Write-Output "Cleaning any pre-existing certs from the top layer of $uri" | timestamp
+      Write-Output "Acquiring RootfsMutex" | timestamp
 
       $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
       $thirtyMinutes = 30 * 60 * 1000
@@ -41,29 +43,35 @@ function cleanupCerts() {
       }
       C:\var\vcap\packages\hydrate\hydrate.exe remove-layer --ociImage $uri
       if ($LASTEXITCODE -ne 0) {
-        Write-Host "hydrate.exe remove-layer failed"
+        Write-Output "hydrate.exe remove-layer failed" | timestamp
         $mtx.ReleaseMutex()
-        Write-Host "Released RootfsMutex"
+        Write-Output "Released RootfsMutex" | timestamp
         exit $LASTEXITCODE
       }
       $mtx.ReleaseMutex()
-      Write-Host "Released RootfsMutex"
-      Write-Host "hydrate.exe remove-layer succeed for $uri"
+      Write-Output "Released RootfsMutex" | timestamp
+      Write-Output "hydrate.exe remove-layer succeed for $uri" | timestamp
     <% end %>
   <% end %>
 
-  Write-Host "Finished windowsfs pre-start"
+  Write-Output "Finished windowsfs pre-start" | timestamp
   exit 0
 <% end %>
+
+Write-Output "Deleting any existing containers" | timestamp
+# Ensure there aren't any existing containers, because the cert-injector will
+# do a `groot pull`, and this could cause issues with the layers if containers
+# are around at the time of the pull.
+Get-ComputeProcess | foreach { c:\var\vcap\packages\winc\winc.exe delete $_.Id }
 
 <% if_p("windows-rootfs.trusted_certs") do |trusted_certs| %>
   $ErrorActionPreference = "Stop";
   trap { $host.SetShouldExit(1) }
 
-  Write-Host "Injecting trusted certs"
+  Write-Output "Injecting trusted certs" | timestamp
 
   # powershell can't handle multiple certs in one file, so we need to split them up
-  Write-Host "Splitting certs"
+  Write-Output "Splitting certs" | timestamp
 
   $certData = "<%= trusted_certs %>"
   $certFile=[System.IO.Path]::GetTempFileName()
@@ -75,7 +83,7 @@ function cleanupCerts() {
   $certSplitterBin = "c:\var\vcap\packages\certsplitter-fs\certsplitter.exe"
   & $certSplitterBin $certFile $certDirectory
   if ($LASTEXITCODE -ne 0) {
-    Write-Host "certsplitter failed to split certs"
+    Write-Output "certsplitter failed to split certs" | timestamp
     cleanupCerts -certDirectory $certDirectory -certFile $certFile
     exit $LASTEXITCODE
   }
@@ -84,7 +92,7 @@ function cleanupCerts() {
   # if there's ever more than one, this will take much longer
   # and we should move mutex handling into the cert-injector
   # and create a mutex _per_ image uri.
-  Write-Host "Acquiring RootfsMutex"
+  Write-Output "Acquiring RootfsMutex" | timestamp
 
   $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
   $thirtyMinutes = 30 * 60 * 1000
@@ -92,7 +100,7 @@ function cleanupCerts() {
     cleanupCerts -certDirectory $certDirectory -certFile $certFile
     throw "Could not acquire RootfsMutex after 30 minutes"
   }
-  Write-Host "Acquired RootfsMutex"
+  Write-Output "Acquired RootfsMutex" | timestamp
 
   $grootDriverStore = ""
   $grootImageUris = ""
@@ -104,25 +112,25 @@ function cleanupCerts() {
 
   $certInjectorBin = "c:\var\vcap\packages\cert-injector\cert-injector.exe"
 
-  Write-Host "Running cert-injector"
+  Write-Output "Running cert-injector" | timestamp
   & $certInjectorBin $grootDriverStore $certDirectory $grootImageUris.Split(" ")
   if ($LASTEXITCODE -ne 0) {
-    Write-Host "cert-injector failed injecting trusted certs"
+    Write-Output "cert-injector failed injecting trusted certs" | timestamp
     cleanupCerts -certDirectory $certDirectory -certFile $certFile
 
     $mtx.ReleaseMutex()
-    Write-Host "Released RootfsMutex"
+    Write-Output "Released RootfsMutex" | timestamp
 
     exit $LASTEXITCODE
   }
-  Write-Host "Finished running cert-injector"
+  Write-Output "Finished running cert-injector" | timestamp
 
   cleanupCerts -certDirectory $certDirectory -certFile $certFile
 
-  Write-Host "Finished injecting trusted certs"
+  Write-Output "Finished injecting trusted certs" | timestamp
 
   $mtx.ReleaseMutex()
-  Write-Host "Released RootfsMutex"
+  Write-Output "Released RootfsMutex" | timestamp
 <% end %>
 
-Write-Host "Finished windowsfs pre-start"
+Write-Output "Finished windowsfs pre-start" | timestamp
