@@ -101,6 +101,7 @@ Get-ComputeProcess | foreach { c:\var\vcap\packages\winc\winc.exe delete $_.Id }
     cleanupCerts -certDirectory $certDirectory -certFile $certFile
     exit $LASTEXITCODE
   }
+  Write-Output "The given certs have been split and written into the directory at $certDirectory" | timestamp
 
   $grootDriverStore = ""
   $grootImageUris = ""
