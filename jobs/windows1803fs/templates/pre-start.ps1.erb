@@ -89,7 +89,8 @@ Get-ComputeProcess | foreach { c:\var\vcap\packages\winc\winc.exe delete $_.Id }
   $certData = "<%= trusted_certs %>"
   $certFile=[System.IO.Path]::GetTempFileName()
   Set-Content -Value $certData -Path $certFile -Encoding Ascii
-  $certDirectory = "c:\var\vcap\data\tmp\windowsfs-trusted-certs"
+  $random = (Get-Random)
+  $certDirectory = "c:\var\vcap\data\tmp\windowsfs-trusted-certs-$random"
   rm -Recurse -Force -ErrorAction SilentlyContinue $certDirectory
   mkdir $certDirectory | Out-Null
 
